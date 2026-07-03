@@ -1,0 +1,3 @@
+add_library(engine_interface INTERFACE)
+target_include_directories(engine_interface INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(engine_interface INTERFACE core_core)

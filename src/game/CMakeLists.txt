@@ -1,0 +1,3 @@
+add_library(game_stubs INTERFACE)
+target_include_directories(game_stubs INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(game_stubs INTERFACE engine_interface)
