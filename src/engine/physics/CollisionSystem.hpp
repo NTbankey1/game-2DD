@@ -14,9 +14,16 @@ struct CollisionEvent : core::events::IEvent {
         : entityA(a), entityB(b), overlap(o) {}
 };
 
+struct ObstacleTag {};
+
+struct PlayerDiedEvent : core::events::IEvent {
+    int finalScore = 0;
+    explicit PlayerDiedEvent(int s = 0) : finalScore(s) {}
+};
+
 class CollisionSystem {
 public:
-    void FixedUpdate(entt::registry& registry, core::events::EventBus& eventBus);
+    void FixedUpdate(entt::registry& registry, core::events::EventBus& eventBus, bool& playerDead, int& score);
 };
 
 } // namespace engine::physics

@@ -46,10 +46,18 @@ private:
     entt::registry m_registry;
     SDL_Texture* m_playerTexture = nullptr;
     SDL_Texture* m_groundTexture = nullptr;
+    SDL_Texture* m_obstacleTexture = nullptr;
+    int m_score = 0;
+    bool m_gameOver = false;
+    float m_spawnTimer = 0.0f;
 
     float m_frameTime = 0.0f;
     static constexpr float FIXED_DT = 1.0f / 60.0f;
     bool m_running = false;
+
+    void SpawnPlayer();
+    void SpawnGround();
+    void ResetGame();
 };
 
 } // namespace engine::application

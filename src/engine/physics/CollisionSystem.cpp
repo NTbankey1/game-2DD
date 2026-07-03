@@ -3,10 +3,10 @@
 
 namespace engine::physics {
 
-void CollisionSystem::FixedUpdate(entt::registry& registry, core::events::EventBus& eventBus) {
+void CollisionSystem::FixedUpdate(entt::registry& registry, core::events::EventBus& eventBus, bool& playerDead, int& score) {
     auto view = registry.view<AABBComponent, engine::renderer::TransformComponent>();
 
-    // Find GroundTag + AABB for ground plane
+    // Find ground + AABB
     entt::entity ground = entt::null;
     core::Rectf groundRect;
     for (auto e : registry.view<GroundTag>()) {
@@ -18,8 +18,19 @@ void CollisionSystem::FixedUpdate(entt::registry& registry, core::events::EventB
         }
     }
 
+    entt::entity player = entt::null;
+    core::Rectf playerRect;
+    for (auto e : registry.view<PlayerTag>()) {
+        if (registry.all_of<AABBComponent, engine::renderer::TransformComponent>(e)) {
+            player = e;
+            auto& pAabb = registry.get<AABBComponent>(e);
+            auto& pPos = registry.get<engine::renderer::TransformComponent>(e);
+            playerRect = core::Rectf(pPos.position + pAabb.localBounds.position, pAabb.localBounds.size);
+        }
+    }
+
     for (auto entity : view) {
-        if (entity == ground) continue;
+        if (entity == ground || entity == player) continue;
 
         auto& aabb = view.get<AABBComponent>(entity);
         auto& transform = view.get<engine::renderer::TransformComponent>(entity);
@@ -27,17 +38,21 @@ void CollisionSystem::FixedUpdate(entt::registry& registry, core::events::EventB
 
         // Check ground collision
         if (ground != entt::null && worldRect.Overlaps(groundRect)) {
-            // Push player out: snap to ground top
-            float overlap = (worldRect.Bottom() - groundRect.Top());
+            float overlap = worldRect.Bottom() - groundRect.Top();
             transform.position.y -= overlap;
-
-            // Stop downward velocity
             if (registry.all_of<VelocityComponent>(entity)) {
                 auto& vel = registry.get<VelocityComponent>(entity);
                 if (vel.velocity.y > 0) vel.velocity.y = 0;
             }
-
             eventBus.Publish(CollisionEvent(entity, ground, core::Vec2f(0, overlap)));
+        }
+
+        // Check player-obstacle collision
+        if (player != entt::null && entity != player && entity != ground) {
+            if (playerRect.Overlaps(worldRect)) {
+                playerDead = true;
+                eventBus.Publish(PlayerDiedEvent(score));
+            }
         }
     }
 }
