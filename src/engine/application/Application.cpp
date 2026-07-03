@@ -18,7 +18,6 @@
 
 namespace engine::application {
 
-static constexpr float JUMP_FORCE = -520.0f;
 static constexpr float BASE_SCROLL = 350.0f;
 static constexpr float MAX_SCROLL = 750.0f;
 static constexpr float BASE_INTERVAL = 2.0f;
@@ -157,6 +156,7 @@ void Application::SpawnPlayer() {
     m_registry.emplace<engine::physics::GravityComponent>(player, 980.0f);
     m_registry.emplace<engine::physics::AABBComponent>(player, core::Rectf(0, 0, 50, 50));
     m_registry.emplace<engine::physics::PlayerTag>(player);
+    m_registry.emplace<engine::physics::PlayerStateComponent>(player);
 }
 
 void Application::SpawnGround() {
@@ -352,13 +352,37 @@ void Application::Run() {
         }
         if (m_gameOver) { m_appState = AppState::GameOver; continue; }
 
-        // Jump
+        // ====== COYOTE TIME + JUMP BUFFER ======
         if (jumpHeld) {
-            auto view = m_registry.view<engine::physics::VelocityComponent, engine::physics::PlayerTag>();
-            for (auto entity : view) {
-                auto& vel = view.get<engine::physics::VelocityComponent>(entity);
-                if (std::abs(vel.velocity.y) < 1.0f) { vel.velocity.y = JUMP_FORCE; }
+            for (auto e : m_registry.view<engine::physics::PlayerStateComponent>()) {
+                auto& ps = m_registry.get<engine::physics::PlayerStateComponent>(e);
+                if (ps.jumpBufferTimer == 0.0f) ps.jumpBufferTimer = 0.001f;
             }
+        }
+
+        constexpr float COYOTE_MS = 0.07f;
+        constexpr float BUFFER_MS = 0.10f;
+        constexpr float JUMP_V = -500.0f;
+
+        for (auto e : m_registry.view<engine::physics::PlayerStateComponent>()) {
+            auto& ps = m_registry.get<engine::physics::PlayerStateComponent>(e);
+            ps.jumpHeld = jumpHeld;
+
+            bool canJump = (ps.isGrounded || ps.coyoteTimer < COYOTE_MS)
+                        && ps.jumpBufferTimer > 0.0f
+                        && ps.jumpBufferTimer < BUFFER_MS;
+
+            if (canJump) {
+                if (m_registry.all_of<engine::physics::VelocityComponent>(e)) {
+                    auto& vel = m_registry.get<engine::physics::VelocityComponent>(e);
+                    vel.velocity.y = JUMP_V;
+                    ps.isGrounded = false;
+                    ps.coyoteTimer = 99.0f;
+                }
+                ps.jumpBufferTimer = 0.0f;
+            }
+
+            if (ps.jumpBufferTimer > BUFFER_MS) ps.jumpBufferTimer = 0.0f;
         }
 
         // Keep player at fixed X
