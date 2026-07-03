@@ -39,7 +39,7 @@ for cpp_file in sorted(SRC.rglob("*.[ch]pp")):
     if source < 0:
         continue
     for i, line in enumerate(cpp_file.read_text().splitlines(), 1):
-        m = INCLUDE_RE.match(line)
+        m = INCLUDE_RE.search(line)
         if not m:
             continue
         target = target_layer(m.group(0))
