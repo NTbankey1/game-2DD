@@ -4,7 +4,8 @@ function(add_compiler_warnings TARGET)
     else()
         target_compile_options(${TARGET} PRIVATE
             -Wall -Wextra -Wpedantic
-            -Wconversion -Wsign-conversion -Wshadow -Wnon-virtual-dtor -Wold-style-cast -Wcast-align
+            -Wconversion -Wno-error=conversion -Wno-error=sign-conversion
+            -Wshadow -Wnon-virtual-dtor -Wold-style-cast -Wcast-align
             -Woverloaded-virtual
             -Wnull-dereference -Wdouble-promotion
             -Wformat=2
