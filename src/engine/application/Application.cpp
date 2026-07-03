@@ -49,6 +49,156 @@ static SDL_Texture* CreateSolidTexture(SDL_Renderer* renderer, int w, int h,
     return tex;
 }
 
+static void SetPixel(SDL_Surface* surf, int x, int y, uint32_t color) {
+    if (x < 0 || x >= surf->w || y < 0 || y >= surf->h) return;
+    ((uint32_t*)surf->pixels)[y * (surf->pitch / 4) + x] = color;
+}
+
+static uint32_t RGBA(SDL_Surface* surf, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+    return SDL_MapRGBA(SDL_GetPixelFormatDetails(SDL_PIXELFORMAT_RGBA8888), nullptr, r, g, b, a);
+}
+
+static SDL_Texture* CreatePlayerTexture(SDL_Renderer* renderer) {
+    SDL_Surface* surf = SDL_CreateSurface(40, 50, SDL_PIXELFORMAT_RGBA8888);
+    if (!surf) return nullptr;
+    SDL_LockSurface(surf);
+    uint32_t skin = RGBA(surf, 0xFF, 0xCC, 0x88, 0xFF);
+    uint32_t pants = RGBA(surf, 0x44, 0x88, 0xFF, 0xFF);
+    uint32_t shoes = RGBA(surf, 0x66, 0x44, 0x22, 0xFF);
+    uint32_t eye = RGBA(surf, 0xFF, 0xFF, 0xFF, 0xFF);
+    uint32_t pupil = RGBA(surf, 0x22, 0x22, 0x22, 0xFF);
+
+    // Head (circle-like, rows 0-12)
+    for (int y = 1; y < 11; y++) {
+        int halfW = (11 - y) * 2;
+        if (halfW < 2) halfW = 2;
+        for (int x = 20 - halfW; x < 20 + halfW; x++) {
+            if (x >= 0 && x < 40) SetPixel(surf, x, y, skin);
+        }
+    }
+    // Eyes (row 5-6)
+    SetPixel(surf, 15, 5, eye); SetPixel(surf, 16, 5, eye);
+    SetPixel(surf, 24, 5, eye); SetPixel(surf, 25, 5, eye);
+    SetPixel(surf, 16, 6, pupil); SetPixel(surf, 24, 6, pupil);
+
+    // Body (rows 12-28)
+    for (int y = 11; y < 28; y++) {
+        for (int x = 12; x < 28; x++) {
+            SetPixel(surf, x, y, pants);
+        }
+    }
+
+    // Arms (rows 12-24, left and right)
+    for (int y = 14; y < 24; y++) {
+        for (int x = 6; x < 12; x++) SetPixel(surf, x, y, skin);
+        for (int x = 28; x < 34; x++) SetPixel(surf, x, y, skin);
+    }
+
+    // Legs (rows 28-45)
+    for (int y = 28; y < 42; y++) {
+        for (int x = 13; x < 19; x++) SetPixel(surf, x, y, pants);
+        for (int x = 21; x < 27; x++) SetPixel(surf, x, y, pants);
+    }
+
+    // Shoes
+    for (int y = 42; y < 47; y++) {
+        for (int x = 11; x < 20; x++) SetPixel(surf, x, y, shoes);
+        for (int x = 20; x < 29; x++) SetPixel(surf, x, y, shoes);
+    }
+
+    SDL_UnlockSurface(surf);
+    SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surf);
+    SDL_DestroySurface(surf);
+    return tex;
+}
+
+static SDL_Texture* CreateGroundTexture(SDL_Renderer* renderer) {
+    SDL_Surface* surf = SDL_CreateSurface(1280, 40, SDL_PIXELFORMAT_RGBA8888);
+    if (!surf) return nullptr;
+    SDL_LockSurface(surf);
+    uint32_t grass = RGBA(surf, 0x44, 0xBB, 0x44, 0xFF);
+    uint32_t darkGrass = RGBA(surf, 0x33, 0x99, 0x33, 0xFF);
+    uint32_t dirt = RGBA(surf, 0x8B, 0x6B, 0x4A, 0xFF);
+    uint32_t darkDirt = RGBA(surf, 0x6B, 0x4A, 0x2A, 0xFF);
+
+    for (int y = 0; y < 40; y++) {
+        for (int x = 0; x < 1280; x++) {
+            if (y < 5) {
+                // Grass top — alternating grass blades
+                uint32_t c = ((x + y * 3) % 4 < 2) ? grass : darkGrass;
+                SetPixel(surf, x, y, c);
+            } else {
+                // Dirt with variation
+                uint32_t c = ((x + y * 7) % 6 < 4) ? dirt : darkDirt;
+                SetPixel(surf, x, y, c);
+            }
+        }
+    }
+    SDL_UnlockSurface(surf);
+    SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surf);
+    SDL_DestroySurface(surf);
+    return tex;
+}
+
+static SDL_Texture* CreateObstacleTexture(SDL_Renderer* renderer) {
+    // A spike/cactus shape
+    SDL_Surface* surf = SDL_CreateSurface(36, 50, SDL_PIXELFORMAT_RGBA8888);
+    if (!surf) return nullptr;
+    SDL_LockSurface(surf);
+    uint32_t body = RGBA(surf, 0xDD, 0x55, 0x00, 0xFF);
+    uint32_t dark = RGBA(surf, 0xAA, 0x33, 0x00, 0xFF);
+    uint32_t spike = RGBA(surf, 0xFF, 0x77, 0x22, 0xFF);
+
+    for (int y = 0; y < 50; y++) {
+        int halfW = 4 + (50 - y) / 3;
+        if (halfW < 2) halfW = 2;
+        for (int x = 18 - halfW; x < 18 + halfW; x++) {
+            if (x < 0 || x >= 36) continue;
+            uint32_t c = ((x + y) % 3 == 0) ? dark : body;
+            SetPixel(surf, x, y, c);
+        }
+    }
+    // Spikes on sides
+    for (int y = 5; y < 40; y += 8) {
+        int xL = 18 - 4 - (50 - y) / 3;
+        int xR = 18 + 4 + (50 - y) / 3;
+        for (int dy = -2; dy <= 2; dy++) {
+            if (xL > 0) SetPixel(surf, xL, y + dy, spike);
+            if (xR < 36) SetPixel(surf, xR, y + dy, spike);
+        }
+    }
+    SDL_UnlockSurface(surf);
+    SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surf);
+    SDL_DestroySurface(surf);
+    return tex;
+}
+
+static SDL_Texture* CreateCoinTexture(SDL_Renderer* renderer) {
+    SDL_Surface* surf = SDL_CreateSurface(16, 16, SDL_PIXELFORMAT_RGBA8888);
+    if (!surf) return nullptr;
+    SDL_LockSurface(surf);
+    uint32_t gold = RGBA(surf, 0xFF, 0xDD, 0x00, 0xFF);
+    uint32_t bright = RGBA(surf, 0xFF, 0xEE, 0x66, 0xFF);
+    uint32_t dark = RGBA(surf, 0xAA, 0x88, 0x00, 0xFF);
+
+    for (int y = 0; y < 16; y++) {
+        for (int x = 0; x < 16; x++) {
+            int dx = x - 8, dy = y - 8;
+            int dist2 = dx * dx + dy * dy;
+            if (dist2 > 56) continue;  // outside circle
+            uint32_t c;
+            if (dist2 < 20) c = bright;
+            else if (dist2 < 36) c = gold;
+            else c = dark;
+            SetPixel(surf, x, y, c);
+        }
+    }
+    SDL_UnlockSurface(surf);
+    SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surf);
+    SDL_DestroySurface(surf);
+    return tex;
+}
+
 float Application::GetScrollSpeed() const {
     float t = static_cast<float>(m_score) / 500.0f;
     return BASE_SCROLL + (MAX_SCROLL - BASE_SCROLL) * std::min(t, 1.0f);
@@ -145,22 +295,26 @@ void Application::CacheStaticTexts() {
 // ============ SPAWNING ============
 
 void Application::SpawnPlayer() {
-    m_playerTexture = CreateSolidTexture(m_renderer->Handle(), 50, 50, 0xFF, 0x44, 0x44, 0xFF);
+    if (!m_playerTexture) {
+        m_playerTexture = CreatePlayerTexture(m_renderer->Handle());
+    }
     if (!m_playerTexture) return;
     auto player = m_registry.create();
     m_registry.emplace<engine::renderer::TransformComponent>(player,
         core::Vec2f(100.0f, 0.0f), 0.0f, core::Vec2f(1.0f, 1.0f));
     m_registry.emplace<engine::renderer::SpriteComponent>(player,
-        m_playerTexture, core::Rectf(0, 0, 50, 50), 1);
+        m_playerTexture, core::Rectf(0, 0, 40, 50), 1);
     m_registry.emplace<engine::physics::VelocityComponent>(player);
     m_registry.emplace<engine::physics::GravityComponent>(player, 980.0f);
-    m_registry.emplace<engine::physics::AABBComponent>(player, core::Rectf(0, 0, 50, 50));
+    m_registry.emplace<engine::physics::AABBComponent>(player, core::Rectf(0, 0, 40, 50));
     m_registry.emplace<engine::physics::PlayerTag>(player);
     m_registry.emplace<engine::physics::PlayerStateComponent>(player);
 }
 
 void Application::SpawnGround() {
-    m_groundTexture = CreateSolidTexture(m_renderer->Handle(), 1280, 40, 0x33, 0x99, 0x33, 0xFF);
+    if (!m_groundTexture) {
+        m_groundTexture = CreateGroundTexture(m_renderer->Handle());
+    }
     if (!m_groundTexture) return;
     auto ground = m_registry.create();
     m_registry.emplace<engine::renderer::TransformComponent>(ground,
@@ -173,7 +327,7 @@ void Application::SpawnGround() {
 
 void Application::SpawnCoin() {
     if (!m_coinTexture) {
-        m_coinTexture = CreateSolidTexture(m_renderer->Handle(), 12, 12, 0xFF, 0xDD, 0x00, 0xFF);
+        m_coinTexture = CreateCoinTexture(m_renderer->Handle());
     }
     if (m_spawnTimer > 0.1f && (rand() % 100) < 3) {
         auto coin = m_registry.create();
@@ -181,7 +335,7 @@ void Application::SpawnCoin() {
         m_registry.emplace<engine::renderer::TransformComponent>(coin,
             core::Vec2f(1280.0f, y), 0.0f, core::Vec2f(1.0f, 1.0f));
         m_registry.emplace<engine::renderer::SpriteComponent>(coin,
-            m_coinTexture, core::Rectf(0, 0, 12, 12), 3);
+            m_coinTexture, core::Rectf(0, 0, 16, 16), 3);
     }
 }
 
@@ -214,7 +368,7 @@ bool Application::Initialize() {
     m_renderSystem = std::make_unique<engine::renderer::RenderSystem>(*m_renderer);
     m_text = std::make_unique<engine::renderer::TextRenderer>(m_renderer->Handle());
     m_camera.SetViewport(core::Vec2f(1280.0f, 720.0f));
-    m_obstacleTexture = CreateSolidTexture(m_renderer->Handle(), 40, 50, 0xFF, 0x88, 0x00, 0xFF);
+    m_obstacleTexture = CreateObstacleTexture(m_renderer->Handle());
 
     CacheStaticTexts();
     SDL_SetWindowTitle(m_window->Handle(), "Endless Runner");
@@ -400,9 +554,9 @@ void Application::Run() {
                 m_registry.emplace<engine::renderer::TransformComponent>(obs,
                     core::Vec2f(1280.0f, 630.0f), 0.0f, core::Vec2f(1.0f, 1.0f));
                 m_registry.emplace<engine::renderer::SpriteComponent>(obs,
-                    m_obstacleTexture, core::Rectf(0, 0, 40, 50), 2);
+                    m_obstacleTexture, core::Rectf(0, 0, 36, 50), 2);
                 m_registry.emplace<engine::physics::AABBComponent>(obs,
-                    core::Rectf(0, 0, 40, 50));
+                    core::Rectf(0, 0, 36, 50));
             }
             SpawnCoin();
         }
