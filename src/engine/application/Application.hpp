@@ -3,6 +3,7 @@
 #include "engine/application/IApplication.hpp"
 #include "engine/camera/Camera.hpp"
 #include "core/events/EventBus.hpp"
+#include "engine/renderer/TextRenderer.hpp"
 #include <entt/entt.hpp>
 #include <memory>
 
@@ -42,6 +43,7 @@ private:
     std::unique_ptr<engine::platform::sdl3::SDLRenderer> m_renderer;
     std::unique_ptr<engine::scene::GameStateMachine> m_stateMachine;
     std::unique_ptr<engine::renderer::RenderSystem> m_renderSystem;
+    std::unique_ptr<engine::renderer::TextRenderer> m_text;
 
     engine::Camera m_camera;
     core::events::EventBus m_eventBus;
@@ -51,6 +53,12 @@ private:
     SDL_Texture* m_obstacleTexture = nullptr;
     SDL_Texture* m_coinTexture = nullptr;
 
+    // Pre-cached text textures for performance
+    SDL_Texture* m_titleText = nullptr;
+    SDL_Texture* m_promptText = nullptr;
+    SDL_Texture* m_gameOverText = nullptr;
+    SDL_Texture* m_pausedText = nullptr;
+
     AppState m_appState = AppState::Menu;
     bool m_gameOver = false;
     int m_score = 0;
@@ -58,16 +66,27 @@ private:
     float m_spawnTimer = 0.0f;
     bool m_debounceEnter = false;
 
+    // Parallax background state
+    float m_bgOffset1 = 0.0f;
+    float m_bgOffset2 = 0.0f;
+
     float m_frameTime = 0.0f;
     static constexpr float FIXED_DT = 1.0f / 60.0f;
     bool m_running = false;
 
     void SpawnPlayer();
     void SpawnGround();
-    void SpawnCoins();
+    void SpawnCoin();
     void ResetGame();
     float GetScrollSpeed() const;
     float GetSpawnInterval() const;
+
+    // Drawing helpers
+    void DrawGradientBackground(uint8_t r1, uint8_t g1, uint8_t b1, uint8_t r2, uint8_t g2, uint8_t b2);
+    void DrawParallaxMountains();
+    void DrawSemiTransparentOverlay();
+    void DrawCenteredText(const std::string& text, float y, uint8_t r, uint8_t g, uint8_t b);
+    void CacheStaticTexts();
 };
 
 } // namespace engine::application

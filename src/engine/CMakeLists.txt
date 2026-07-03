@@ -8,6 +8,7 @@ add_library(engine_application STATIC
     application/Application.cpp
     scene/GameStateMachine.cpp
     renderer/RenderSystem.cpp
+    renderer/TextRenderer.cpp
     physics/PhysicsSystem.cpp
     physics/CollisionSystem.cpp
 )
