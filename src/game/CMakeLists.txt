@@ -4,6 +4,7 @@ target_link_libraries(game_stubs INTERFACE engine_interface)
 
 add_library(game_impl STATIC
     engine_impl/MenuState.cpp
+    input/InputMapper.cpp
 )
 target_include_directories(game_impl PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(game_impl PUBLIC engine_application engine_interface)

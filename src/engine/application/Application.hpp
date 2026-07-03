@@ -2,6 +2,7 @@
 
 #include "engine/application/IApplication.hpp"
 #include "engine/camera/Camera.hpp"
+#include "core/events/EventBus.hpp"
 #include <entt/entt.hpp>
 #include <memory>
 
@@ -30,6 +31,7 @@ public:
     engine::scene::GameStateMachine& States() { return *m_stateMachine; }
     entt::registry& Registry() { return m_registry; }
     engine::Camera& Camera() { return m_camera; }
+    core::events::EventBus& Events() { return m_eventBus; }
 
 private:
     std::unique_ptr<engine::platform::sdl3::SDLWindow> m_window;
@@ -39,6 +41,7 @@ private:
     std::unique_ptr<engine::renderer::RenderSystem> m_renderSystem;
 
     engine::Camera m_camera;
+    core::events::EventBus m_eventBus;
     entt::registry m_registry;
     SDL_Texture* m_testTexture = nullptr;
 

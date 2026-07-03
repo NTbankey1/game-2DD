@@ -16,7 +16,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    app.States().PushScene(std::make_unique<game::MenuState>());
+    app.States().PushScene(std::make_unique<game::MenuState>(app.Events()));
     app.Run();
 
     spdlog::info("Endless Runner exited cleanly");

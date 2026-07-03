@@ -4,7 +4,9 @@
 #include "engine/platform/sdl3/SDLRenderer.hpp"
 #include "engine/scene/GameStateMachine.hpp"
 #include "engine/renderer/RenderSystem.hpp"
+#include "engine/input/KeyEvent.hpp"
 #include <SDL3/SDL.h>
+#include <unordered_map>
 #include <spdlog/spdlog.h>
 
 namespace engine::application {
@@ -70,6 +72,21 @@ void Application::Run() {
         if (m_input->QuitRequested()) {
             m_running = false;
             break;
+        }
+
+        // Publish KeyEvent for each pressed key we care about
+        {
+            static constexpr SDL_Scancode tracked[] = {
+                SDL_SCANCODE_SPACE, SDL_SCANCODE_UP, SDL_SCANCODE_W,
+                SDL_SCANCODE_DOWN, SDL_SCANCODE_S,
+                SDL_SCANCODE_ESCAPE, SDL_SCANCODE_RETURN
+            };
+            for (auto sc : tracked) {
+                bool pressed = SDL_GetKeyboardState(nullptr)[sc];
+                m_eventBus.Publish(engine::input::KeyEvent{
+                    static_cast<int>(sc), pressed
+                });
+            }
         }
 
         std::uint64_t currCounter = SDL_GetPerformanceCounter();
