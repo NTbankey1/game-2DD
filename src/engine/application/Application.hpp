@@ -19,6 +19,8 @@ namespace engine::physics { class PhysicsSystem; class CollisionSystem; }
 
 namespace engine::application {
 
+enum class AppState { Menu, Playing, Paused, GameOver };
+
 class Application : public engine::IApplication {
 public:
     Application();
@@ -47,9 +49,14 @@ private:
     SDL_Texture* m_playerTexture = nullptr;
     SDL_Texture* m_groundTexture = nullptr;
     SDL_Texture* m_obstacleTexture = nullptr;
-    int m_score = 0;
+    SDL_Texture* m_coinTexture = nullptr;
+
+    AppState m_appState = AppState::Menu;
     bool m_gameOver = false;
+    int m_score = 0;
+    int m_highScore = 0;
     float m_spawnTimer = 0.0f;
+    bool m_debounceEnter = false;
 
     float m_frameTime = 0.0f;
     static constexpr float FIXED_DT = 1.0f / 60.0f;
@@ -57,7 +64,10 @@ private:
 
     void SpawnPlayer();
     void SpawnGround();
+    void SpawnCoins();
     void ResetGame();
+    float GetScrollSpeed() const;
+    float GetSpawnInterval() const;
 };
 
 } // namespace engine::application
