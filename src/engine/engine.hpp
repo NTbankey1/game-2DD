@@ -1,9 +1,9 @@
 #pragma once
 // Engine interface convenience header
-#include "renderer/IRenderer.hpp"
-#include "audio/IAudioDevice.hpp"
-#include "input/IInputDevice.hpp"
-#include "resource/IAssetLoader.hpp"
-#include "scene/IScene.hpp"
-#include "scene/SceneManager.hpp"
-#include "application/IApplication.hpp"
+#include "engine/renderer/IRenderer.hpp"
+#include "engine/audio/IAudioDevice.hpp"
+#include "engine/input/IInputDevice.hpp"
+#include "engine/resource/IAssetLoader.hpp"
+#include "engine/scene/IScene.hpp"
+#include "engine/scene/SceneManager.hpp"
+#include "engine/application/IApplication.hpp"

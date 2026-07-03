@@ -1,6 +1,6 @@
 #pragma once
 #include "core/core.hpp"
-#include "IScene.hpp"
+#include "engine/scene/IScene.hpp"
 #include <memory>
 #include <stack>
 
