@@ -1,7 +1,9 @@
 #include "Application.hpp"
 #include "engine/platform/sdl3/SDLWindow.hpp"
 #include "engine/platform/sdl3/SDLInputDevice.hpp"
+#include "engine/platform/sdl3/SDLRenderer.hpp"
 #include "engine/scene/GameStateMachine.hpp"
+#include "engine/renderer/RenderSystem.hpp"
 #include <SDL3/SDL.h>
 #include <spdlog/spdlog.h>
 
@@ -25,6 +27,29 @@ bool Application::Initialize() {
     if (!m_window) return false;
 
     m_input = std::make_unique<engine::platform::sdl3::SDLInputDevice>();
+
+    m_renderer = std::make_unique<engine::platform::sdl3::SDLRenderer>(*m_window);
+    if (!m_renderer->Initialize()) return false;
+
+    m_renderSystem = std::make_unique<engine::renderer::RenderSystem>(*m_renderer);
+    m_camera.SetViewport(core::Vec2f(1280.0f, 720.0f));
+
+    // Create test texture: 50x50 red square
+    SDL_Surface* surface = SDL_CreateSurface(50, 50, SDL_PIXELFORMAT_RGBA8888);
+    if (surface) {
+        SDL_FillSurfaceRect(surface, nullptr, SDL_MapRGBA(SDL_GetPixelFormatDetails(SDL_PIXELFORMAT_RGBA8888), nullptr, 0xFF, 0x33, 0x33, 0xFF));
+        m_testTexture = SDL_CreateTextureFromSurface(m_renderer->Handle(), surface);
+        SDL_DestroySurface(surface);
+
+        // Create a test entity
+        auto entity = m_registry.create();
+        m_registry.emplace<engine::renderer::TransformComponent>(entity,
+            core::Vec2f(100.0f, 300.0f), 0.0f, core::Vec2f(2.0f, 2.0f));
+        m_registry.emplace<engine::renderer::SpriteComponent>(entity,
+            m_testTexture, core::Rectf(0, 0, 50, 50), 0);
+        spdlog::info("Test entity created with red square texture");
+    }
+
     m_running = true;
     return true;
 }
@@ -60,7 +85,12 @@ void Application::Run() {
         }
 
         if (!m_stateMachine->Empty()) m_stateMachine->Update(deltaTime);
+
+        // Render frame
+        m_renderer->BeginFrame();
         m_stateMachine->Render();
+        m_renderSystem->Render(m_registry, m_camera);
+        m_renderer->EndFrame();
     }
 
     spdlog::info("Application::Run ended");
@@ -69,6 +99,14 @@ void Application::Run() {
 void Application::Shutdown() {
     if (!m_running && !m_window) return;
     spdlog::info("Application::Shutdown");
+
+    if (m_testTexture) {
+        SDL_DestroyTexture(m_testTexture);
+        m_testTexture = nullptr;
+    }
+    m_registry.clear();
+    m_renderSystem.reset();
+    m_renderer.reset();
     m_stateMachine.reset();
     m_input.reset();
     m_window.reset();

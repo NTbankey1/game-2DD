@@ -1,6 +1,7 @@
 add_library(engine_platform_sdl3 STATIC
     sdl3/SDLWindow.cpp
     sdl3/SDLInputDevice.cpp
+    sdl3/SDLRenderer.cpp
 )
 target_include_directories(engine_platform_sdl3 PUBLIC
     ${CMAKE_SOURCE_DIR}/src

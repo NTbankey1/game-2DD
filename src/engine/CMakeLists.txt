@@ -7,6 +7,7 @@ add_subdirectory(platform)
 add_library(engine_application STATIC
     application/Application.cpp
     scene/GameStateMachine.cpp
+    renderer/RenderSystem.cpp
 )
 target_include_directories(engine_application PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(engine_application PUBLIC
