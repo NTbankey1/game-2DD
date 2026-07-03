@@ -4,6 +4,8 @@
 #include "engine/platform/sdl3/SDLRenderer.hpp"
 #include "engine/scene/GameStateMachine.hpp"
 #include "engine/renderer/RenderSystem.hpp"
+#include "engine/physics/PhysicsSystem.hpp"
+#include "engine/physics/CollisionSystem.hpp"
 #include "engine/input/KeyEvent.hpp"
 #include <SDL3/SDL.h>
 #include <unordered_map>
@@ -15,6 +17,16 @@ Application::Application()
     : m_stateMachine(std::make_unique<engine::scene::GameStateMachine>()) {}
 
 Application::~Application() { Shutdown(); }
+
+static SDL_Texture* CreateSolidTexture(SDL_Renderer* renderer, int w, int h, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+    SDL_Surface* surface = SDL_CreateSurface(w, h, SDL_PIXELFORMAT_RGBA8888);
+    if (!surface) return nullptr;
+    SDL_FillSurfaceRect(surface, nullptr,
+        SDL_MapRGBA(SDL_GetPixelFormatDetails(SDL_PIXELFORMAT_RGBA8888), nullptr, r, g, b, a));
+    SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surface);
+    SDL_DestroySurface(surface);
+    return tex;
+}
 
 bool Application::Initialize() {
     spdlog::info("Application::Initialize");
@@ -36,20 +48,32 @@ bool Application::Initialize() {
     m_renderSystem = std::make_unique<engine::renderer::RenderSystem>(*m_renderer);
     m_camera.SetViewport(core::Vec2f(1280.0f, 720.0f));
 
-    // Create test texture: 50x50 red square
-    SDL_Surface* surface = SDL_CreateSurface(50, 50, SDL_PIXELFORMAT_RGBA8888);
-    if (surface) {
-        SDL_FillSurfaceRect(surface, nullptr, SDL_MapRGBA(SDL_GetPixelFormatDetails(SDL_PIXELFORMAT_RGBA8888), nullptr, 0xFF, 0x33, 0x33, 0xFF));
-        m_testTexture = SDL_CreateTextureFromSurface(m_renderer->Handle(), surface);
-        SDL_DestroySurface(surface);
+    // ---- Player: red square 50x50 at top-left, falls with gravity ----
+    m_playerTexture = CreateSolidTexture(m_renderer->Handle(), 50, 50, 0xFF, 0x33, 0x33, 0xFF);
+    if (m_playerTexture) {
+        auto player = m_registry.create();
+        m_registry.emplace<engine::renderer::TransformComponent>(player,
+            core::Vec2f(100.0f, 0.0f), 0.0f, core::Vec2f(1.0f, 1.0f));
+        m_registry.emplace<engine::renderer::SpriteComponent>(player,
+            m_playerTexture, core::Rectf(0, 0, 50, 50), 1);
+        m_registry.emplace<engine::physics::VelocityComponent>(player);
+        m_registry.emplace<engine::physics::GravityComponent>(player, 980.0f);
+        m_registry.emplace<engine::physics::AABBComponent>(player, core::Rectf(0, 0, 50, 50));
+        m_registry.emplace<engine::physics::PlayerTag>(player);
+        spdlog::info("Player entity created");
+    }
 
-        // Create a test entity
-        auto entity = m_registry.create();
-        m_registry.emplace<engine::renderer::TransformComponent>(entity,
-            core::Vec2f(100.0f, 300.0f), 0.0f, core::Vec2f(2.0f, 2.0f));
-        m_registry.emplace<engine::renderer::SpriteComponent>(entity,
-            m_testTexture, core::Rectf(0, 0, 50, 50), 0);
-        spdlog::info("Test entity created with red square texture");
+    // ---- Ground: green bar at bottom ----
+    m_groundTexture = CreateSolidTexture(m_renderer->Handle(), 1280, 40, 0x33, 0xCC, 0x33, 0xFF);
+    if (m_groundTexture) {
+        auto ground = m_registry.create();
+        m_registry.emplace<engine::renderer::TransformComponent>(ground,
+            core::Vec2f(0.0f, 680.0f), 0.0f, core::Vec2f(1.0f, 1.0f));
+        m_registry.emplace<engine::renderer::SpriteComponent>(ground,
+            m_groundTexture, core::Rectf(0, 0, 1280, 40), 0);
+        m_registry.emplace<engine::physics::AABBComponent>(ground, core::Rectf(0, 0, 1280, 40));
+        m_registry.emplace<engine::physics::GroundTag>(ground);
+        spdlog::info("Ground entity created");
     }
 
     m_running = true;
@@ -63,6 +87,9 @@ void Application::Run() {
     }
     spdlog::info("Application::Run started");
 
+    engine::physics::PhysicsSystem physics;
+    engine::physics::CollisionSystem collision;
+
     float accumulator = 0.0f;
     std::uint64_t prevCounter = SDL_GetPerformanceCounter();
     const std::uint64_t counterFreq = SDL_GetPerformanceFrequency();
@@ -74,7 +101,7 @@ void Application::Run() {
             break;
         }
 
-        // Publish KeyEvent for each pressed key we care about
+        // Publish KeyEvent for each pressed key
         {
             static constexpr SDL_Scancode tracked[] = {
                 SDL_SCANCODE_SPACE, SDL_SCANCODE_UP, SDL_SCANCODE_W,
@@ -83,9 +110,9 @@ void Application::Run() {
             };
             for (auto sc : tracked) {
                 bool pressed = SDL_GetKeyboardState(nullptr)[sc];
-                m_eventBus.Publish(engine::input::KeyEvent{
+                m_eventBus.Publish(engine::input::KeyEvent(
                     static_cast<int>(sc), pressed
-                });
+                ));
             }
         }
 
@@ -95,15 +122,18 @@ void Application::Run() {
         if (deltaTime > 0.25f) deltaTime = 0.25f;
         m_frameTime = deltaTime;
 
+        // Fixed timestep: physics + collision
         accumulator += deltaTime;
         while (accumulator >= FIXED_DT) {
             if (!m_stateMachine->Empty()) m_stateMachine->FixedUpdate(FIXED_DT);
+            physics.FixedUpdate(m_registry, FIXED_DT);
+            collision.FixedUpdate(m_registry, m_eventBus);
             accumulator -= FIXED_DT;
         }
 
         if (!m_stateMachine->Empty()) m_stateMachine->Update(deltaTime);
 
-        // Render frame
+        // Render
         m_renderer->BeginFrame();
         m_stateMachine->Render();
         m_renderSystem->Render(m_registry, m_camera);
@@ -117,10 +147,8 @@ void Application::Shutdown() {
     if (!m_running && !m_window) return;
     spdlog::info("Application::Shutdown");
 
-    if (m_testTexture) {
-        SDL_DestroyTexture(m_testTexture);
-        m_testTexture = nullptr;
-    }
+    if (m_playerTexture) { SDL_DestroyTexture(m_playerTexture); m_playerTexture = nullptr; }
+    if (m_groundTexture) { SDL_DestroyTexture(m_groundTexture); m_groundTexture = nullptr; }
     m_registry.clear();
     m_renderSystem.reset();
     m_renderer.reset();

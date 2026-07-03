@@ -15,6 +15,7 @@ namespace engine::platform::sdl3 {
 }
 namespace engine::scene { class GameStateMachine; }
 namespace engine::renderer { class RenderSystem; }
+namespace engine::physics { class PhysicsSystem; class CollisionSystem; }
 
 namespace engine::application {
 
@@ -43,7 +44,8 @@ private:
     engine::Camera m_camera;
     core::events::EventBus m_eventBus;
     entt::registry m_registry;
-    SDL_Texture* m_testTexture = nullptr;
+    SDL_Texture* m_playerTexture = nullptr;
+    SDL_Texture* m_groundTexture = nullptr;
 
     float m_frameTime = 0.0f;
     static constexpr float FIXED_DT = 1.0f / 60.0f;
