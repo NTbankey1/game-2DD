@@ -1,6 +1,8 @@
 #include "CollisionSystem.hpp"
 #include "engine/renderer/RenderComponents.hpp"
+#include "engine/tilemap/Tilemap.hpp"
 #include <algorithm>
+#include <cmath>
 
 namespace engine::physics {
 
@@ -59,6 +61,21 @@ void CollisionSystem::FixedUpdate(entt::registry& registry, core::events::EventB
         auto& pAabb = registry.get<AABBComponent>(player);
         auto& pPos = registry.get<engine::renderer::TransformComponent>(player);
         playerRect = core::Rectf(pPos.position + pAabb.localBounds.position, pAabb.localBounds.size);
+
+        // Reset wall contact
+        if (registry.all_of<PlayerStateComponent>(player)) {
+            auto& ps = registry.get<PlayerStateComponent>(player);
+            ps.wallContactLeft = false;
+            ps.wallContactRight = false;
+        }
+
+        // Tilemap collision
+        if (m_tilemap) {
+            ResolveTileCollision(registry, player, pPos.position,
+                                 pAabb.localBounds.size.x * 0.5f,
+                                 pAabb.localBounds.size.y * 0.5f);
+            playerRect = core::Rectf(pPos.position + pAabb.localBounds.position, pAabb.localBounds.size);
+        }
     }
 
     // Check obstacle collisions (ground vs obstacles, player vs obstacles)
@@ -83,6 +100,86 @@ void CollisionSystem::FixedUpdate(entt::registry& registry, core::events::EventB
         if (player != entt::null && playerRect.Overlaps(worldRect)) {
             playerDead = true;
             eventBus.Publish(PlayerDiedEvent(score));
+        }
+    }
+}
+
+void CollisionSystem::ResolveTileCollision(entt::registry& registry, entt::entity player,
+                                            core::Vec2f& pos, float hw, float hh) const {
+    if (!m_tilemap) return;
+    int ts = m_tilemap->GetTileSize();
+    float tsF = static_cast<float>(ts);
+
+    // Player AABB in world space
+    float left = pos.x - hw;
+    float right = pos.x + hw;
+    float top = pos.y;
+    float bottom = pos.y + hh * 2.0f;
+
+    // Tile range the player overlaps
+    int tileLeft = static_cast<int>(std::floor(left / tsF));
+    int tileRight = static_cast<int>(std::floor((right - 1.0f) / tsF));
+    int tileTop = static_cast<int>(std::floor(top / tsF));
+    int tileBottom = static_cast<int>(std::floor((bottom - 1.0f) / tsF));
+
+    // Check each overlapping tile
+    for (int ty = tileTop; ty <= tileBottom; ty++) {
+        for (int tx = tileLeft; tx <= tileRight; tx++) {
+            if (!m_tilemap->IsSolid(tx, ty)) continue;
+
+            // Tile AABB in world space
+            float tileLeftW = static_cast<float>(tx) * tsF;
+            float tileRightW = tileLeftW + tsF;
+            float tileTopW = static_cast<float>(ty) * tsF;
+            float tileBottomW = tileTopW + tsF;
+
+            // Calculate overlap on each axis
+            float overlapLeft = right - tileLeftW;
+            float overlapRight = tileRightW - left;
+            float overlapTop = bottom - tileTopW;
+            float overlapBottom = tileBottomW - top;
+
+            // Resolve smallest overlap first
+            float minOverlapX = std::min(overlapLeft, overlapRight);
+            float minOverlapY = std::min(overlapTop, overlapBottom);
+
+            if (minOverlapX < minOverlapY) {
+                // Push horizontally — detect wall contact
+                if (overlapLeft < overlapRight) {
+                    pos.x -= overlapLeft;
+                    if (auto* ps = registry.try_get<PlayerStateComponent>(player))
+                        ps->wallContactRight = true;
+                } else {
+                    pos.x += overlapRight;
+                    if (auto* ps = registry.try_get<PlayerStateComponent>(player))
+                        ps->wallContactLeft = true;
+                }
+                if (auto* vel = registry.try_get<VelocityComponent>(player)) {
+                    vel->velocity.x = 0;
+                }
+            } else {
+                // Push vertically
+                if (overlapTop < overlapBottom) {
+                    pos.y -= overlapTop;
+                    if (auto* vel = registry.try_get<VelocityComponent>(player)) {
+                        if (vel->velocity.y > 0) vel->velocity.y = 0;
+                    }
+                    if (auto* ps = registry.try_get<PlayerStateComponent>(player)) {
+                        ps->isGrounded = true;
+                    }
+                } else {
+                    pos.y += overlapBottom;
+                    if (auto* vel = registry.try_get<VelocityComponent>(player)) {
+                        if (vel->velocity.y < 0) vel->velocity.y = 0;
+                    }
+                }
+            }
+
+            // Recompute player rect edges after push
+            left = pos.x - hw;
+            right = pos.x + hw;
+            top = pos.y;
+            bottom = pos.y + hh * 2.0f;
         }
     }
 }

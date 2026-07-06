@@ -23,12 +23,14 @@ struct AABBComponent {
 struct GroundTag {};    // marks static collision surface
 struct PlayerTag {};    // marks player entity
 
-/// Player state for responsive jump feel
+/// Player state for responsive jump feel + wall interaction
 struct PlayerStateComponent {
     bool isGrounded = false;
-    float coyoteTimer = 0.0f;   // time since leaving ground
-    float jumpBufferTimer = 0.0f; // time since jump was pressed
-    bool jumpHeld = false;      // is jump key still held (for variable height)
+    bool wallContactLeft = false;
+    bool wallContactRight = false;
+    float coyoteTimer = 0.0f;
+    float jumpBufferTimer = 0.0f;
+    bool jumpHeld = false;
 };
 
 

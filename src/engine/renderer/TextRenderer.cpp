@@ -1,18 +1,33 @@
 #include "TextRenderer.hpp"
-#include "BitmapFont.hpp"
+#include <SDL3/SDL.h>
 #include <cstring>
 #include <cstdint>
+#include <string>
+#include <format>
 
 namespace engine::renderer {
 
-TextRenderer::TextRenderer(SDL_Renderer* renderer) : m_renderer(renderer) {
-    for (int i = 0; i < MAX_CACHE; i++) {
-        m_cache[i].texture = nullptr;
-    }
+TextRenderer::TextRenderer(SDL_Renderer* renderer)
+    : m_renderer(renderer) {
+    for (int i = 0; i < MAX_CACHE; i++) m_cache[i].texture = nullptr;
 }
 
 TextRenderer::~TextRenderer() {
     ClearCache();
+    if (m_font20) TTF_CloseFont(m_font20);
+    if (m_font22) TTF_CloseFont(m_font22);
+    if (m_font30) TTF_CloseFont(m_font30);
+}
+
+bool TextRenderer::Initialize(const std::string& fontPath) {
+    m_font20 = TTF_OpenFont(fontPath.c_str(), 20.0f);
+    m_font22 = TTF_OpenFont(fontPath.c_str(), 22.0f);
+    m_font30 = TTF_OpenFont(fontPath.c_str(), 30.0f);
+    if (!m_font22) {
+        SDL_Log("TextRenderer: failed to open font: %s", SDL_GetError());
+        return false;
+    }
+    return true;
 }
 
 void TextRenderer::ClearCache() {
@@ -25,84 +40,44 @@ void TextRenderer::ClearCache() {
     m_cacheCount = 0;
 }
 
-SDL_Texture* TextRenderer::CreateTexture(const std::string& text, uint8_t r, uint8_t g, uint8_t b) {
-    if (text.empty()) return nullptr;
+SDL_Texture* TextRenderer::CreateTexture(const std::string& text, uint8_t r, uint8_t g, uint8_t b, TTF_Font* font) {
+    if (text.empty() || !font) return nullptr;
 
-    int w = static_cast<int>(text.size()) * FONT_CHAR_WIDTH;
-    int h = FONT_CHAR_HEIGHT;
-
-    // Create surface for the text
-    SDL_Surface* surface = SDL_CreateSurface(w, h, SDL_PIXELFORMAT_RGBA8888);
+    SDL_Color color{r, g, b, 0xFF};
+    SDL_Surface* surface = TTF_RenderText_Blended(font, text.c_str(), text.size(), color);
     if (!surface) return nullptr;
-
-    // Lock surface for pixel access
-    SDL_LockSurface(surface);
-    auto* pixels = static_cast<uint32_t*>(surface->pixels);
-    int pitch = surface->pitch / 4;  // pixels per row
-
-    uint32_t fgColor = SDL_MapRGBA(SDL_GetPixelFormatDetails(SDL_PIXELFORMAT_RGBA8888), nullptr, r, g, b, 0xFF);
-    uint32_t bgColor = SDL_MapRGBA(SDL_GetPixelFormatDetails(SDL_PIXELFORMAT_RGBA8888), nullptr, 0, 0, 0, 0x00);
-
-    // Clear surface to transparent
-    SDL_memset(pixels, 0, static_cast<size_t>(w * h) * 4);
-
-    // Render each character
-    for (size_t ci = 0; ci < text.size(); ci++) {
-        int ch = static_cast<unsigned char>(text[ci]);
-        if (ch < FONT_FIRST_CHAR || ch > FONT_LAST_CHAR) ch = ' ';
-        int fontIdx = ch - FONT_FIRST_CHAR;
-
-        for (int row = 0; row < FONT_CHAR_HEIGHT; row++) {
-            uint8_t bits = FONT_DATA[fontIdx][row];
-            for (int col = 0; col < FONT_CHAR_WIDTH; col++) {
-                if (bits & (1 << (7 - col))) {
-                    int px = static_cast<int>(ci) * FONT_CHAR_WIDTH + col;
-                    int py = row;
-                    if (px < w && py < h) {
-                        pixels[py * pitch + px] = fgColor;
-                    }
-                }
-            }
-        }
-    }
-
-    SDL_UnlockSurface(surface);
 
     SDL_Texture* texture = SDL_CreateTextureFromSurface(m_renderer, surface);
     SDL_DestroySurface(surface);
 
-    // Enable alpha blending
     if (texture) {
         SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
     }
-
     return texture;
 }
 
-SDL_Texture* TextRenderer::GetText(const std::string& text, uint8_t r, uint8_t g, uint8_t b) {
+SDL_Texture* TextRenderer::GetText(const std::string& text, uint8_t r, uint8_t g, uint8_t b, int size) {
     // Build cache key
-    char keyBuf[256];
-    int n = SDL_snprintf(keyBuf, sizeof(keyBuf), "%s|%02x%02x%02x", text.c_str(), r, g, b);
-    std::string key(keyBuf, static_cast<size_t>(n));
+    std::string key = text + "|" + std::to_string(r) + "," + std::to_string(g) + "," + std::to_string(b) + "," + std::to_string(size);
 
     // Check cache
     for (int i = 0; i < m_cacheCount; i++) {
-        if (m_cache[i].key == key) {
-            return m_cache[i].texture;
-        }
+        if (m_cache[i].key == key) return m_cache[i].texture;
     }
 
-    // Create new texture
-    SDL_Texture* tex = CreateTexture(text, r, g, b);
+    // Pick font size
+    TTF_Font* font = m_font22;
+    if (size <= 20) font = m_font20;
+    else if (size >= 30) font = m_font30;
+
+    // Create texture
+    SDL_Texture* tex = CreateTexture(text, r, g, b, font);
     if (!tex) return nullptr;
 
-    // Evict oldest if cache full
+    // Evict oldest if full
     if (m_cacheCount >= MAX_CACHE) {
         if (m_cache[0].texture) SDL_DestroyTexture(m_cache[0].texture);
-        // Shift remaining
-        for (int i = 1; i < m_cacheCount; i++) {
-            m_cache[i - 1] = m_cache[i];
-        }
+        for (int i = 1; i < m_cacheCount; i++) m_cache[i - 1] = m_cache[i];
         m_cacheCount--;
     }
 
@@ -115,19 +90,26 @@ SDL_Texture* TextRenderer::GetText(const std::string& text, uint8_t r, uint8_t g
 
 void TextRenderer::DrawText(SDL_Texture* texture, float x, float y) {
     if (!texture || !m_renderer) return;
-
     float fw, fh;
     SDL_GetTextureSize(texture, &fw, &fh);
     SDL_FRect dest{x, y, fw, fh};
     SDL_RenderTexture(m_renderer, texture, nullptr, &dest);
 }
 
-void TextRenderer::RenderString(const std::string& text, float x, float y, uint8_t r, uint8_t g, uint8_t b) {
-    SDL_Texture* tex = CreateTexture(text, r, g, b);
-    if (tex) {
-        DrawText(tex, x, y);
-        SDL_DestroyTexture(tex);
-    }
+void TextRenderer::RenderString(const std::string& text, float x, float y, uint8_t r, uint8_t g, uint8_t b, int size) {
+    SDL_Texture* tex = GetText(text, r, g, b, size);
+    if (tex) DrawText(tex, x, y);
+}
+
+int TextRenderer::TextWidth(const std::string& text, int size) const {
+    if (text.empty()) return 0;
+    TTF_Font* font = m_font22;
+    if (size <= 20) font = m_font20;
+    else if (size >= 30) font = m_font30;
+    if (!font) return static_cast<int>(text.size()) * 8;
+    int w = 0, h = 0;
+    TTF_GetStringSize(font, text.c_str(), text.size(), &w, &h);
+    return w;
 }
 
 } // namespace engine::renderer

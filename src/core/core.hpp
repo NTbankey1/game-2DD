@@ -3,8 +3,6 @@
 #include "math/Math.hpp"
 #include "math/Vec2.hpp"
 #include "math/Rect.hpp"
-#include "ecs/EcsFwd.hpp"
-#include "ecs/Registry.hpp"
 #include "events/IEvent.hpp"
 #include "events/EventBus.hpp"
 #include "config/ConfigTypes.hpp"

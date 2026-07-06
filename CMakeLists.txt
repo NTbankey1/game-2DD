@@ -18,6 +18,10 @@ include(cmake/CompilerWarnings.cmake)
 include(cmake/Sanitizers.cmake)
 include(cmake/Packaging.cmake)
 
+# ---- SDL3_ttf ----
+find_package(SDL3_ttf REQUIRED)
+add_compile_definitions(FONT_DIR="${CMAKE_SOURCE_DIR}/assets")
+
 # ---- Subdirectories ----
 add_subdirectory(src)
 add_subdirectory(tests)

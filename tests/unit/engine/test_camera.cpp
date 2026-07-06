@@ -39,11 +39,12 @@ TEST_CASE("Camera: bounds", "[engine][camera]") {
     CHECK(b.size == Vec2f(800, 600));
 }
 
-TEST_CASE("Camera: parallax offset", "[engine][camera]") {
+TEST_CASE("Camera: follow target", "[engine][camera]") {
     Camera cam;
-    cam.SetPosition(Vec2f(500, 300));
-    auto fg = cam.GetParallaxOffset(1.0f);
-    CHECK(fg == Vec2f(500, 300));
-    auto bg = cam.GetParallaxOffset(0.25f);
-    CHECK(bg == Vec2f(125, 75));
+    cam.SetViewport(Vec2f(1280, 720));
+    cam.SetBounds(Rectf(0.0f, 0.0f, 2560.0f, 720.0f));
+    cam.FollowTarget(entt::null, Vec2f(1500, 300), 1.0f);
+    // desired = (1500-640, 300-360) = (860, -60)
+    // clamped to bounds (0..1280, 0..0) = (860, 0)
+    CHECK(cam.GetPosition() == Vec2f(860, 0));
 }

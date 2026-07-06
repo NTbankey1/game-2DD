@@ -9,7 +9,7 @@ aliases:
   - Testing
   - Chiến lược test
 ---
-
+ 
 # Testing Strategy
 
 %% Test pyramid, tools, và patterns cho từng layer %%

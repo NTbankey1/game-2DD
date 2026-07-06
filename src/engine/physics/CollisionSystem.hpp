@@ -4,6 +4,8 @@
 #include "core/events/EventBus.hpp"
 #include "engine/physics/PhysicsComponents.hpp"
 
+namespace engine::tilemap { class Tilemap; }
+
 namespace engine::physics {
 
 struct CollisionEvent : core::events::IEvent {
@@ -24,6 +26,15 @@ struct PlayerDiedEvent : core::events::IEvent {
 class CollisionSystem {
 public:
     void FixedUpdate(entt::registry& registry, core::events::EventBus& eventBus, bool& playerDead, int& score);
+
+    /// Optional tilemap for world collision (set nullptr to disable)
+    void SetTilemap(const tilemap::Tilemap* tm) { m_tilemap = tm; }
+
+private:
+    const tilemap::Tilemap* m_tilemap = nullptr;
+
+    void ResolveTileCollision(entt::registry& registry, entt::entity player,
+                              core::Vec2f& pos, float hw, float hh) const;
 };
 
 } // namespace engine::physics

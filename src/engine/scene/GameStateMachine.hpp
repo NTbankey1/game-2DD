@@ -1,22 +1,20 @@
 #pragma once
 
-#include "engine/scene/SceneManager.hpp"
 #include "engine/scene/IScene.hpp"
 #include <memory>
 #include <stack>
 
 namespace engine::scene {
 
-class GameStateMachine : public engine::SceneManager {
+class GameStateMachine {
 public:
     GameStateMachine() = default;
-    ~GameStateMachine() override = default;
+    ~GameStateMachine() = default;
 
-    void PushScene(std::unique_ptr<engine::IScene> scene) override;
-    void PopScene() override;
-    void ReloadScene() override;
-    void Update(float dt) override;
-
+    void PushScene(std::unique_ptr<engine::IScene> scene);
+    void PopScene();
+    void ReloadScene();
+    void Update(float dt);
     bool FixedUpdate(float dt);
     void Render();
 
