@@ -1,0 +1,107 @@
+{
+  "direction": "TB",
+  "nodes": [
+    {"id": "app", "label": "Application\n(main.cpp)", "group": "app", "width": 160, "height": 60},
+    {"id": "gamestate", "label": "GameStateMachine\nMenu/Playing/Paused/GameOver", "group": "app", "width": 180, "height": 60},
+
+    {"id": "player", "label": "Player\nEntity + Components", "group": "game", "groupLabel": "GAMEPLAY LAYER (src/game)", "width": 160, "height": 60},
+    {"id": "obstacles", "label": "Obstacles\nSpike / Bird / Spawner", "group": "game", "width": 160, "height": 60},
+    {"id": "coins", "label": "Coins / Collectibles", "group": "game", "width": 140, "height": 60},
+    {"id": "scoring", "label": "ScoreSystem", "group": "game", "width": 140, "height": 60},
+    {"id": "difficulty", "label": "IDifficultyStrategy", "group": "game", "width": 150, "height": 60},
+    {"id": "inputcommand", "label": "InputCommand\nJump / Slide / Pause", "group": "game", "width": 160, "height": 60},
+    {"id": "inputmapper", "label": "InputMapper\nKey -> Command", "group": "game", "width": 150, "height": 60},
+
+    {"id": "renderer", "label": "IRenderer\nSDL3 / OpenGL backend", "group": "engine", "groupLabel": "ENGINE LAYER (src/engine)", "width": 170, "height": 60},
+    {"id": "rendersys", "label": "RenderSystem\nSprite batching + Camera", "group": "engine", "width": 170, "height": 60},
+    {"id": "physicssys", "label": "PhysicsSystem\nGravity + Velocity", "group": "engine", "width": 160, "height": 60},
+    {"id": "collisionsys", "label": "CollisionSystem\nAABB + Spatial Hashing", "group": "engine", "width": 170, "height": 60},
+    {"id": "audio", "label": "IAudioDevice\nSFX + Music", "group": "engine", "width": 150, "height": 60},
+    {"id": "input", "label": "IInputDevice\nKeyboard / Gamepad", "group": "engine", "width": 160, "height": 60},
+    {"id": "camera", "label": "CameraSystem\nFollow + Deadzone", "group": "engine", "width": 160, "height": 60},
+    {"id": "resource", "label": "AssetManager\nTexture/Font/Audio cache", "group": "engine", "width": 170, "height": 60},
+    {"id": "scene", "label": "SceneManager\nScene lifecycle", "group": "engine", "width": 160, "height": 60},
+    {"id": "particles", "label": "ParticleSystem\nObjectPool", "group": "engine", "width": 150, "height": 60},
+    {"id": "animation", "label": "AnimationSystem\nState Machine", "group": "engine", "width": 160, "height": 60},
+    {"id": "ui", "label": "UI System\nComposite Widget Tree", "group": "engine", "width": 170, "height": 60},
+    {"id": "save", "label": "SaveSystem\ncereal serialization", "group": "engine", "width": 160, "height": 60},
+    {"id": "achievement", "label": "AchievementSystem", "group": "engine", "width": 150, "height": 60},
+    {"id": "leaderboard", "label": "Leaderboard", "group": "engine", "width": 140, "height": 60},
+    {"id": "networking", "label": "Networking\n(interface stub)", "group": "engine", "width": 150, "height": 60},
+    {"id": "replay", "label": "ReplaySystem\nCommand recording", "group": "engine", "width": 160, "height": 60},
+    {"id": "debug", "label": "Debug Overlay\nProfiler / Console", "group": "engine", "width": 160, "height": 60},
+    {"id": "tilemap", "label": "TileMap\nParallax layers", "group": "engine", "width": 150, "height": 60},
+
+    {"id": "eventbus", "label": "EventBus\nObserver pattern\nQueued dispatch", "group": "core", "groupLabel": "CORE LAYER (src/core)", "width": 170, "height": 60},
+    {"id": "ecs", "label": "ECS (EnTT wrap)\nEntity + Component + System", "group": "core", "width": 180, "height": 60},
+    {"id": "math", "label": "Math\nVec2 / Rect / GLM", "group": "core", "width": 150, "height": 60},
+    {"id": "config", "label": "Config\nnlohmann/json", "group": "core", "width": 150, "height": 60},
+
+    {"id": "sdl3", "label": "SDL3\nWindow / Input / Audio / Render", "group": "platform", "groupLabel": "PLATFORM LAYER", "width": 160, "height": 60},
+    {"id": "opengl", "label": "OpenGL (optional)\nCustom shaders", "group": "platform", "width": 150, "height": 60},
+    {"id": "spdlog", "label": "spdlog\nAsync logging", "group": "platform", "width": 150, "height": 60},
+    {"id": "entt", "label": "EnTT\nECS library", "group": "platform", "width": 140, "height": 60},
+    {"id": "cereal", "label": "cereal\nSerialization", "group": "platform", "width": 150, "height": 60},
+    {"id": "nlohmann", "label": "nlohmann/json\nConfig / Level data", "group": "platform", "width": 170, "height": 60},
+    {"id": "stb", "label": "stb_image/truetype\nImage + Font loading", "group": "platform", "width": 180, "height": 60},
+
+    {"id": "tests", "label": "Tests\nCatch2 + CTest\nUnit / Integration / Bench", "width": 180, "height": 60}
+  ],
+  "edges": [
+    {"source": "app", "target": "gamestate", "label": "owns"},
+    {"source": "app", "target": "scene", "label": "init"},
+
+    {"source": "inputmapper", "target": "inputcommand", "label": "produces"},
+    {"source": "inputcommand", "target": "eventbus", "label": "publish"},
+
+    {"source": "player", "target": "ecs", "label": "Entity + Components"},
+    {"source": "player", "target": "inputmapper", "label": "listens"},
+    {"source": "obstacles", "target": "ecs", "label": "Entity + ObjectPool"},
+    {"source": "coins", "target": "ecs", "label": "Entity + ObjectPool"},
+    {"source": "scoring", "target": "eventbus", "label": "listens"},
+    {"source": "difficulty", "target": "eventbus", "label": "listens"},
+
+    {"source": "rendersys", "target": "renderer", "label": "IRenderer"},
+    {"source": "rendersys", "target": "camera", "label": "view culling"},
+    {"source": "rendersys", "target": "ecs", "label": "reads components"},
+    {"source": "physicssys", "target": "ecs", "label": "Velocity, Gravity"},
+    {"source": "collisionsys", "target": "physicssys", "label": "AABB detection"},
+    {"source": "collisionsys", "target": "eventbus", "label": "publish events"},
+    {"source": "particles", "target": "eventbus", "label": "listens"},
+    {"source": "audio", "target": "eventbus", "label": "listens"},
+    {"source": "animation", "target": "ecs", "label": "AnimationState"},
+    {"source": "save", "target": "eventbus", "label": "listens"},
+    {"source": "achievement", "target": "eventbus", "label": "listens"},
+    {"source": "achievement", "target": "save", "label": "persists"},
+    {"source": "leaderboard", "target": "save", "label": "local"},
+    {"source": "leaderboard", "target": "networking", "label": "online stub"},
+    {"source": "replay", "target": "inputcommand", "label": "records"},
+    {"source": "replay", "target": "save", "label": "serialize"},
+    {"source": "debug", "target": "rendersys", "label": "overlay draw"},
+    {"source": "tilemap", "target": "rendersys", "label": "parallax layers"},
+
+    {"source": "renderer", "target": "sdl3", "label": "SDL3 Renderer"},
+    {"source": "renderer", "target": "opengl", "label": "GL backend (opt)"},
+    {"source": "input", "target": "sdl3", "label": "SDL3 Events"},
+    {"source": "audio", "target": "sdl3", "label": "SDL3 Audio"},
+    {"source": "resource", "target": "stb", "label": "load images"},
+
+    {"source": "scene", "target": "ecs", "label": "EnTT Registry"},
+    {"source": "scene", "target": "resource", "label": "preload assets"},
+    {"source": "ui", "target": "renderer", "label": "draws"},
+    {"source": "ui", "target": "eventbus", "label": "publish/listen"},
+
+    {"source": "config", "target": "nlohmann", "label": "JSON parse"},
+    {"source": "eventbus", "target": "cereal", "label": "serializable POD"},
+    {"source": "ecs", "target": "entt", "label": "EnTT wrapper"},
+    {"source": "ecs", "target": "eventbus", "label": "component events"},
+
+    {"source": "tests", "target": "physicssys", "label": "Unit Test"},
+    {"source": "tests", "target": "collisionsys", "label": "Unit Test"},
+    {"source": "tests", "target": "scoring", "label": "Unit Test"},
+    {"source": "tests", "target": "difficulty", "label": "Unit Test"},
+    {"source": "tests", "target": "math", "label": "Unit Test"},
+
+    {"source": "spdlog", "target": "debug", "label": "logging everywhere"}
+  ]
+}

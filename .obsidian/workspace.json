@@ -1,0 +1,228 @@
+{
+  "main": {
+    "id": "6e80b62d3c74be96",
+    "type": "split",
+    "children": [
+      {
+        "id": "67ff49d41a52b06c",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "69a63f6606b72bbd",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Chưa đặt tên.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Chưa đặt tên"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "8f93c9d91c35e797",
+    "type": "split",
+    "children": [
+      {
+        "id": "e7a22af0fcbc0707",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "543c46c1077389b7",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Trình duyệt tệp"
+            }
+          },
+          {
+            "id": "08eb802a26b93186",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Tìm kiếm"
+            }
+          },
+          {
+            "id": "2870c9b8157769a4",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Đánh dấu"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "40d1a4987536f706",
+    "type": "split",
+    "children": [
+      {
+        "id": "b03cfdcd110c985d",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "96757a6f5a2a0e08",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "docs/architecture/Testing Strategy.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Liên kết đến của Testing Strategy"
+            }
+          },
+          {
+            "id": "002fd5a76fd13efd",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "docs/architecture/Testing Strategy.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Liên kết đi ra từ Testing Strategy"
+            }
+          },
+          {
+            "id": "21b083ff8307524d",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Thẻ"
+            }
+          },
+          {
+            "id": "661b9bf58f190d02",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "Tất cả thuộc tính"
+            }
+          },
+          {
+            "id": "d3810e07d41f9c74",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "docs/architecture/Testing Strategy.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Đề cương của Testing Strategy"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Mở bộ chuyển đổi nhanh": false,
+      "graph:Mở xem biểu đồ": false,
+      "canvas:Tạo bảng mới": false,
+      "daily-notes:Mở ghi chú hôm nay": false,
+      "templates:Chèn mẫu": false,
+      "command-palette:Mở khay lệnh": false,
+      "bases:Tạo cơ sở mới": false
+    }
+  },
+  "active": "69a63f6606b72bbd",
+  "lastOpenFiles": [
+    "docs/game-architecture-overview.md",
+    "Chưa đặt tên.md",
+    "build/debug/src/game/strLDBt0",
+    "build/debug/src/game/stfGAsen",
+    "build/debug/src/engine/stXH1If8",
+    "build/debug/src/engine/st7vHDoM",
+    "build/debug/src/engine/CMakeFiles/engine_application.dir/application/Application.cpp.o.d",
+    "build/debug/src/game/CMakeFiles/game_impl.dir/states/ExplorationState.cpp.o.d",
+    "build/debug/src/game/CMakeFiles/game_impl.dir/states/GameOverState.cpp.o.d",
+    "src/game/states/ExplorationState.cpp.tmp.466528.2c0d3d29cd42",
+    "src/engine/application/Application.cpp.tmp.466528.315cacf44b2b",
+    "src/game/states/GameOverState.cpp.tmp.466528.3860205b6512",
+    "docs/architecture-gap-analysis.md",
+    "docs/CodingStandard.md",
+    "build/debug/_deps/sdl3-src/docs/INTRO-visualstudio.md",
+    "build/debug/_deps/sdl3-src/INSTALL.md",
+    "ADR Index.md",
+    "build/debug/_deps/nlohmann_json-src/docs/mkdocs/docs/api/basic_json/get.md",
+    "docs/architecture/Testing Strategy.md",
+    "docs/architecture/Architecture Pitfalls.md",
+    "skills/brand-check/SKILL.md",
+    "Architecture-EndlessRunner.md",
+    "Architecture-EndlessRunner.canvas",
+    "docs/Project Tree.canvas",
+    "docs/architecture/Layer Architecture.md",
+    "docs/architecture/Design Philosophy.md",
+    "docs/architecture/Design Patterns.md",
+    "docs/architecture/Event System.md",
+    "docs/architecture/Module Dependency Graph.md",
+    "docs/architecture/Resource Management.md",
+    "docs/architecture/Runtime Flow.md",
+    "docs/architecture/Third Party Libraries.md",
+    "docs/architecture/Development Roadmap.md",
+    "docs/architecture/Memory & Performance.md",
+    "docs/architecture/Directory Structure.md",
+    "docs/architecture/Gameplay Systems.md",
+    "docs/Skills-Overview.md",
+    "skills/Skills Ecosystem.canvas",
+    "skills/resize-for-social-media/SKILL.md"
+  ]
+}
